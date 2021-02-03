@@ -2,8 +2,8 @@
 
 # Edit the `.okapi` file in your home directory to contain something like:
 #
-#	OKAPI_URL=https://east-okapi.folio-dev.indexdata.com
-#	OKAPI_TOKEN=xxxxxxxx
+#	OKAPI_URL=https://folio-snapshot-okapi.dev.folio.org
+#	OKAPI_TENANT=diku
 #
 # You obtain OKAPI_TOKEN with
 #
@@ -26,23 +26,24 @@ if test -z "$OKAPI_URL"; then
 	exit 1
 fi
 if test "$1" = "login"; then
-	echo -n "Tenant:"
-	read tenant
-	echo -n "User:"
+	/bin/echo -n "User: "
 	read username
-	echo -n "Password:"
+	/bin/echo -n "Password: "
 	read password
 	curl -o tmp.okapi.out -D tmp.okapi.headers -s \
-		-H "X-Okapi-Tenant:$tenant" \
+		-H "X-Okapi-Tenant:$OKAPI_TENANT" \
 		-H 'Content-Type:application/json' \
 		-H 'Accept:*/*' \
 		-d"{\"username\":\"$username\",\"password\":\"$password\"}" \
 		"$OKAPI_URL/authn/login"
        OKAPI_TOKEN=`cat tmp.okapi.headers|awk '/x-okapi-token/ {print $2}'| tr -d '[:space:]'`
        if test -z "$OKAPI_TOKEN"; then
+               cat tmp.okapi.out
+	       echo
                exit 1
        fi
        echo OKAPI_URL=$OKAPI_URL >~/.okapi
+       echo OKAPI_TENANT=$OKAPI_TENANT >>~/.okapi
        echo OKAPI_TOKEN=$OKAPI_TOKEN >>~/.okapi
        exit 0
 fi
