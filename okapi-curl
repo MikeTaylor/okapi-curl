@@ -5,11 +5,12 @@
 #	OKAPI_URL=https://folio-snapshot-okapi.dev.folio.org
 #	OKAPI_TENANT=diku
 #
-# You obtain OKAPI_TOKEN with
+# Obtain an OKAPI_TOKEN, which is written to that file, with:
 #
 #	okapi-curl login
 #
-# Now you can issue much simpler curl commands by using `okapi-curl`, for example:
+# Now you can issue much simpler curl commands by using `okapi-curl`,
+# for example:
 #
 #	okapi-curl /copycat/profiles
 # or
@@ -25,10 +26,11 @@ if test -z "$OKAPI_URL"; then
 	echo "OKAPI_URL must be given in .okapi"
 	exit 1
 fi
-if test "$1" = "login"; then
-	/bin/echo -n "User: "
+
+if test "x$1" = "xlogin"; then
+	/bin/echo -n 'User: '
 	read username
-	/bin/echo -n "Password: "
+	/bin/echo -n 'Password: '
 	read password
 	curl -o tmp.okapi.out -D tmp.okapi.headers -s \
 		-H "X-Okapi-Tenant:$OKAPI_TENANT" \
@@ -36,16 +38,20 @@ if test "$1" = "login"; then
 		-H 'Accept:*/*' \
 		-d"{\"username\":\"$username\",\"password\":\"$password\"}" \
 		"$OKAPI_URL/authn/login"
-       OKAPI_TOKEN=`cat tmp.okapi.headers|awk '/x-okapi-token/ {print $2}'| tr -d '[:space:]'`
-       if test -z "$OKAPI_TOKEN"; then
-               cat tmp.okapi.out
-	       echo
-               exit 1
-       fi
-       echo OKAPI_URL=$OKAPI_URL >~/.okapi
-       echo OKAPI_TENANT=$OKAPI_TENANT >>~/.okapi
-       echo OKAPI_TOKEN=$OKAPI_TOKEN >>~/.okapi
-       exit 0
+	OKAPI_TOKEN=`
+		cat tmp.okapi.headers |
+		awk '/x-okapi-token/ {print $2}' |
+		tr -d '[:space:]'
+	`
+	if test -z "$OKAPI_TOKEN"; then
+		cat tmp.okapi.out
+		echo
+		exit 1
+	fi
+	echo OKAPI_URL=$OKAPI_URL >~/.okapi
+	echo OKAPI_TENANT=$OKAPI_TENANT >>~/.okapi
+	echo OKAPI_TOKEN=$OKAPI_TOKEN >>~/.okapi
+	exit 0
 fi
 
 path="$1"
