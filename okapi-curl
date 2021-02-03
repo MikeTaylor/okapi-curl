@@ -37,6 +37,7 @@ if test "x$1" = "xlogin"; then
 	read username
 	/bin/echo -n 'Password: '
 	read password
+	trap 'rm -f tmp.okapi.out tmp.okapi.headers' 0 1 15
 	curl -o tmp.okapi.out -D tmp.okapi.headers -s \
 		-H "X-Okapi-Tenant:$OKAPI_TENANT" \
 		-H 'Content-Type:application/json' \
