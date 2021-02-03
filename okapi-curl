@@ -16,8 +16,13 @@
 # or
 #	okapi-curl /copycat/profiles -d"{}"
 
+if [ "x$1" = x-v ]; then
+	MAYBE_ECHO=echo
+	shift
+fi
+
 if [ $# = 0 ]; then
-	echo "Usage: $0 <path> [<curl-options>]" >&2
+	echo "Usage: $0 [-v] login|<path> [<curl-options>]" >&2
 	exit 1;
 fi
 
@@ -57,7 +62,7 @@ fi
 path="$1"
 shift
 
-exec curl -w '\n' \
+exec $MAYBE_ECHO curl -w '\n' \
 	-H "X-Okapi-Token:$OKAPI_TOKEN" \
 	-H "Content-Type:application/json" \
 	-H "Accept:*/*" \
