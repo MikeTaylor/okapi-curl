@@ -1,21 +1,5 @@
 #!/bin/sh
 
-# Edit the `.okapi` file in your home directory to contain something like:
-#
-#	OKAPI_URL=https://folio-snapshot-okapi.dev.folio.org
-#	OKAPI_TENANT=diku
-#
-# Obtain an OKAPI_TOKEN, which is written to that file, with:
-#
-#	okapi-curl login
-#
-# Now you can issue much simpler curl commands by using `okapi-curl`,
-# for example:
-#
-#	okapi-curl /copycat/profiles
-# or
-#	okapi-curl /copycat/profiles -d"{}"
-
 if [ "x$1" = x-v ]; then
 	MAYBE_ECHO=echo
 	shift
