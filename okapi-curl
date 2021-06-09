@@ -10,11 +10,32 @@ if [ $# = 0 ]; then
 	exit 1;
 fi
 
-. ~/.okapi
+# Save off environment variables
+OKAPI_URL_TMP=$OKAPI_URL
+OKAPI_TENANT_TMP=$OKAPI_TENANT
+OKAPI_TOKEN_TMP=$OKAPI_TOKEN
+OKAPI_USER_TMP=$OKAPI_USER
+OKAPI_PW_TMP=$OKAPI_PW
+
+if [ -r ~/.okapi ]; then
+	. ~/.okapi
+fi
+
+# Reset variables from env if necessary
+if test ! -z "$OKAPI_URL_TMP"; then OKAPI_URL=$OKAPI_URL_TMP; fi
+if test ! -z "$OKAPI_TENANT_TMP"; then OKAPI_TENANT=$OKAPI_TENANT_TMP; fi
+if test ! -z "$OKAPI_TOKEN_TMP"; then OKAPI_TOKEN=$OKAPI_TOKEN_TMP; fi
+if test ! -z "$OKAPI_USER_TMP"; then OKAPI_USER=$OKAPI_USER_TMP; fi
+if test ! -z "$OKAPI_PW_TMP"; then OKAPI_PW=$OKAPI_PW_TMP; fi
+
 if test -z "$OKAPI_URL"; then
-	echo "OKAPI_URL must be given in .okapi"
+	echo "OKAPI_URL must be given in ~/.okapi or set in environment"
 	exit 1
 fi
+
+OKAPI_TENANT="${OKAPI_TENANT:-supertenant}"
+
+trap 'rm -f tmp.okapi.out tmp.okapi.headers' 0 1 15
 
 if test "x$1" = "xlogin"; then
 	/bin/echo -n 'User: '
@@ -44,12 +65,41 @@ if test "x$1" = "xlogin"; then
 	exit 0
 fi
 
+if test -z "$OKAPI_TOKEN"; then
+	if test ! -z "$OKAPI_USER"; then
+		if test -z "$OKAPI_PW"; then
+			echo "If using OKAPI_USER, OKAPI_PW must be set in ~/.okapi or environment"
+			exit 1;
+		fi
+		OKAPI_TOKEN=`
+			curl -o tmp.okapi.out -D - -s \
+				-H "X-Okapi-Tenant:$OKAPI_TENANT" \
+				-H 'Content-Type:application/json' \
+				-H 'Accept:*/*' \
+				-d"{\"username\":\"$OKAPI_USER\",\"password\":\"$OKAPI_PW\"}" \
+				"$OKAPI_URL/authn/login" |
+			awk '/x-okapi-token/ {print $2}' |
+			tr -d '[:space:]'
+		`
+		if test -z "$OKAPI_TOKEN"; then
+			cat tmp.okapi.out 1>&2
+			echo
+			exit 1
+		fi
+		rm -f tmp.okapi.out
+	else
+		echo "Either OKAPI_TOKEN or OKAPI_USER/OKAPI_PW must be set in ~/.okapi or environment" >&2
+		exit 1
+	fi
+fi
+
 path="$1"
 shift
 
 exec $MAYBE_ECHO curl -w '\n' \
+	-H "X-Okapi-Tenant:$OKAPI_TENANT" \
 	-H "X-Okapi-Token:$OKAPI_TOKEN" \
 	-H "Content-Type:application/json" \
 	-H "Accept:*/*" \
 	${@+"$@"} \
-	"${OKAPI_URL}{$path}"
+	"${OKAPI_URL}${path}"
